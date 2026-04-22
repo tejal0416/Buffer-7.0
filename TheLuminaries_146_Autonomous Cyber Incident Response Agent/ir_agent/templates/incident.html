@@ -1,0 +1,130 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{{ incident.title }} | Offline Cyber IR Agent</title>
+    <style>
+      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 24px; color: #111; }
+      .muted { color: #666; }
+      .row { display: flex; gap: 18px; flex-wrap: wrap; }
+      .card { border: 1px solid #eee; border-radius: 10px; padding: 14px; background: #fff; flex: 1 1 320px; }
+      .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #f2f2f2; font-size: 12px; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+      th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #444; }
+      a { color: #0b57d0; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      pre { white-space: pre-wrap; word-break: break-word; background: #fafafa; border: 1px solid #eee; padding: 10px; border-radius: 8px; }
+      .score { font-variant-numeric: tabular-nums; }
+    </style>
+  </head>
+  <body>
+    <p><a href="/">Back to incidents</a></p>
+    <h1>{{ incident.title }}</h1>
+    <p>
+      <span class="pill">{{ incident.incident_type }}</span>
+      <span class="pill score">fidelity={{ "%.1f"|format(incident.fidelity_score) }}</span>
+      <span class="pill score">conf={{ "%.2f"|format(incident.confidence_score) }}</span>
+      <span class="pill score">cov={{ "%.2f"|format(incident.coverage_score) }}</span>
+      <span class="pill muted">{{ incident.id }}</span>
+    </p>
+    <p class="muted">Window: {{ incident.start_ts }} to {{ incident.end_ts }} | Sources: {{ incident.sources|join(", ") }}</p>
+
+    <div class="row">
+      <div class="card">
+        <h3>Entities</h3>
+        <div class="muted" style="font-size: 13px;">
+          hosts: {{ incident.entities.hosts|join(", ") }}<br/>
+          users: {{ incident.entities.users|join(", ") }}<br/>
+          ips: {{ incident.entities.ips|join(", ") }}<br/>
+          processes: {{ incident.entities.processes|join(", ") }}
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Evidence</h3>
+        <pre>{{ evidence_json }}</pre>
+      </div>
+
+      <div class="card">
+        <h3>Investigation</h3>
+        <div class="muted" style="font-size:13px;">
+          status: <b>{{ investigation.status }}</b><br/>
+          confidence: <b>{{ "%.2f"|format(investigation.confidence) }}</b><br/>
+          missing sources: {{ investigation.missing_sources|join(", ") if investigation.missing_sources else "-" }}
+        </div>
+        {% if investigation.narrative %}
+          <h4>Narrative (LLM)</h4>
+          <pre>{{ investigation.narrative }}</pre>
+        {% endif %}
+      </div>
+    </div>
+
+    <h2>Runbook</h2>
+    <p class="muted">
+      Template: {{ playbook.runbook.name }} ({{ playbook.runbook.id }} v{{ playbook.runbook.version }})
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Step</th>
+          <th>Title</th>
+          <th>Objective / Procedure</th>
+          <th>Evidence IDs</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in playbook.steps %}
+        <tr>
+          <td class="score">{{ s.step }}</td>
+          <td>
+            <div><b>{{ s.title }}</b></div>
+            <div class="muted" style="font-size:12px;">{{ s.id or "" }}</div>
+          </td>
+          <td>
+            {% if s.objective %}<div><b>Objective:</b> {{ s.objective }}</div>{% endif %}
+            {% if s.procedure %}<div><b>Procedure:</b><br/><pre>{{ s.procedure }}</pre></div>{% else %}<div>{{ s.description }}</div>{% endif %}
+            {% if s.validation %}<div><b>Validation:</b> {{ s.validation }}</div>{% endif %}
+            {% if s.rollback %}<div><b>Rollback:</b> {{ s.rollback }}</div>{% endif %}
+          </td>
+          <td class="muted" style="font-size:12px;">
+            {{ s.evidence_event_ids|join(", ") if s.evidence_event_ids else "-" }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h2>Timeline Events</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>TS</th>
+          <th>Source</th>
+          <th>Type</th>
+          <th>Host</th>
+          <th>User</th>
+          <th>IP</th>
+          <th>Process</th>
+          <th>Message</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in events %}
+        <tr>
+          <td class="muted" style="font-size:12px;">{{ e.timestamp }}</td>
+          <td>{{ e.source }}</td>
+          <td>{{ e.event_type }}</td>
+          <td class="muted" style="font-size:12px;">{{ e.host or "-" }}</td>
+          <td class="muted" style="font-size:12px;">{{ e.user or "-" }}</td>
+          <td class="muted" style="font-size:12px;">{{ e.ip or "-" }}</td>
+          <td class="muted" style="font-size:12px;">{{ e.process or "-" }}</td>
+          <td class="muted" style="font-size:12px;">{{ e.message or "-" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </body>
+</html>
+

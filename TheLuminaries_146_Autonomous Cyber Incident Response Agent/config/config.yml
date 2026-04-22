@@ -1,0 +1,26 @@
+app:
+  expected_sources:
+    - siem
+    - edr
+    - iam
+    - net
+
+  correlation:
+    # How far back "rebuild correlation" looks
+    lookback_minutes: 360
+    # Two events are linked if they share an entity and are within this window
+    link_window_minutes: 15
+    # Ignore tiny clusters below this size
+    min_events_per_incident: 2
+
+  scoring:
+    auth_failed_burst_threshold: 5
+    suspicious_process_names:
+      - powershell.exe
+      - cmd.exe
+      - wscript.exe
+      - rundll32.exe
+    suspicious_domains:
+      - evil.example
+      - c2.bad
+

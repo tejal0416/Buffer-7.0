@@ -1,0 +1,39 @@
+id: rb_c2_v1
+name: Command and Control (C2) / Suspicious Outbound Communications
+version: "1.0"
+incident_types:
+  - command_and_control
+
+defaults:
+  owner_role: "SOC Analyst"
+  severity_guidance: "High if repeated beaconing or outbound from critical hosts."
+
+steps:
+  - id: block_destinations
+    title: "Contain: block malicious destinations"
+    objective: "Stop beaconing and data exfil paths."
+    procedure: |
+      Block domains {{ domains_fmt }} and IPs {{ ips_fmt }} at DNS/proxy/firewall (if approved).
+      Add monitoring for reattempts and alternative destinations.
+    evidence:
+      event_types: ["dns_query", "http_request", "net_connection", "siem_alert"]
+      limit: 25
+
+  - id: identify_execution
+    title: "Identify process and execution chain"
+    objective: "Find the process responsible for outbound comms."
+    procedure: |
+      On host(s) {{ hosts_fmt }}, identify processes {{ processes_fmt }} that initiated suspicious connections.
+      Capture parent process and command-line details.
+    evidence:
+      event_types: ["process_start", "process_create", "net_connection"]
+      limit: 25
+
+  - id: remediate
+    title: "Eradicate and validate"
+    objective: "Remove root cause and confirm no recurrence."
+    procedure: |
+      Remove malicious artifacts, patch exploited weaknesses, and rotate credentials if needed.
+      Validate by confirming no further DNS/HTTP connections to blocked destinations.
+    validation: "No new events match the same IOCs for a defined monitoring window."
+

@@ -1,0 +1,37 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: ir
+      POSTGRES_USER: ir
+      POSTGRES_PASSWORD: ir
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ir -d ir"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg://ir:ir@db:5432/ir
+      APP_CONFIG: /app/config/config.yml
+      RUNBOOK_DIR: /app/runbooks
+      # Optional: point to a local Ollama server (kept off by default)
+      # OLLAMA_BASE_URL: http://ollama:11434
+      # OLLAMA_MODEL: llama3.2:3b
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./config:/app/config:ro
+      - ./runbooks:/app/runbooks:ro
+
+volumes:
+  pgdata:

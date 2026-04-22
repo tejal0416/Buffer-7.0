@@ -1,0 +1,407 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>IRIS THE SMART CYBER SUIT, the local guard</title>
+    <style>
+      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 24px; color: #111; }
+      body.login-mode {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(180deg, #f4f7ff 0%, #ffffff 100%);
+      }
+      .muted { color: #666; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+      th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #444; }
+      .score { font-variant-numeric: tabular-nums; }
+      a { color: #0b57d0; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #f2f2f2; font-size: 12px; }
+      .charts { margin: 20px 0 28px; display: grid; gap: 18px; }
+      .chart-card { border: 1px solid #e8e8e8; border-radius: 10px; padding: 14px; background: #fafafa; }
+      .chart-title { margin: 0 0 10px; font-size: 15px; font-weight: 700; }
+      .chart-subtitle { margin: 0 0 12px; font-size: 12px; color: #666; }
+      .bar-list { display: grid; gap: 8px; }
+      .bar-row { display: grid; grid-template-columns: 180px 1fr 50px; align-items: center; gap: 10px; }
+      .bar-label { font-size: 12px; color: #222; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .bar-track { height: 24px; border-radius: 6px; background: #e9eef8; overflow: hidden; }
+      .bar-fill { height: 100%; background: linear-gradient(90deg, #1967d2, #5fa6ff); cursor: pointer; }
+      .bar-value { font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+      .weekly-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+      .weekly-title { margin: 0; font-size: 13px; color: #333; }
+      .empty { color: #777; font-size: 12px; }
+      .login-wrap { width: min(92vw, 420px); border: 1px solid #e6e6e6; border-radius: 12px; padding: 18px; background: #fafafa; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08); }
+      .login-title { margin: 0 0 8px; font-size: 20px; }
+      .field { display: grid; gap: 6px; margin-bottom: 10px; }
+      .field label { font-size: 12px; color: #333; }
+      .field input { border: 1px solid #d0d0d0; border-radius: 8px; padding: 10px; font-size: 14px; }
+      .btn { border: 0; border-radius: 8px; background: #1967d2; color: #fff; padding: 10px 14px; cursor: pointer; font-weight: 600; }
+      .btn:hover { background: #1252a8; }
+      .notice-bar { margin: 16px 0; border-radius: 8px; padding: 12px 14px; border: 1px solid; font-weight: 700; }
+      .notice-safe { background: #eaf8ef; border-color: #8ad0a0; color: #1b6d36; }
+      .notice-alert { background: #fff1f1; border-color: #f2a2a2; color: #991b1b; }
+      .devices-card { margin: 8px 0 28px; border: 1px solid #e8e8e8; border-radius: 10px; padding: 14px; background: #fafafa; }
+      .device-list { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+      .telemetry-card { margin: 8px 0 22px; border: 1px solid #e8e8e8; border-radius: 10px; padding: 14px; background: #fafafa; }
+      .telemetry-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-bottom: 12px; }
+      .telemetry-stat { border: 1px solid #e2e2e2; border-radius: 8px; padding: 10px; background: #fff; }
+      .telemetry-stat .k { font-size: 12px; color: #666; }
+      .telemetry-stat .v { font-size: 20px; font-weight: 800; margin-top: 4px; }
+      .list-compact { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; color: #333; }
+      .heatmap-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+      .heatmap-table th, .heatmap-table td { border-bottom: 1px solid #ececec; padding: 8px 6px; text-align: left; }
+      .heatmap-cell { display: inline-block; min-width: 82px; text-align: center; border-radius: 6px; padding: 5px 8px; font-weight: 700; text-transform: uppercase; font-size: 10px; letter-spacing: 0.04em; }
+      .hm-healthy { background: #dbf3e4; color: #145c2f; border: 1px solid #8dd4a2; }
+      .hm-degraded { background: #fff4da; color: #815300; border: 1px solid #edc86f; }
+      .hm-missing { background: #ffe4e4; color: #8a1b1b; border: 1px solid #f3a0a0; }
+      .hidden { display: none; }
+    </style>
+  </head>
+  <body class="login-mode">
+    <section id="loginView" class="login-wrap">
+      <h2 class="login-title">Security System Login</h2>
+      <p class="muted" style="margin-top:0;">Demo mode: any username/password combination is accepted.</p>
+      <form id="loginForm">
+        <div class="field">
+          <label for="username">Username</label>
+          <input id="username" type="text" placeholder="Enter username" />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="Enter password" />
+        </div>
+        <button class="btn" type="submit">Login to Security System</button>
+      </form>
+    </section>
+
+    <section id="securitySystem" class="hidden">
+      <h1>IRIS THE SMART CYBER SUIT, the local guard</h1>
+      <p class="muted">
+        Ranked incidents (fidelity / confidence / coverage). Generate runbooks and investigation reports per incident.
+      </p>
+
+      <p>
+        <span class="pill">Runbooks: <a href="/runbooks">/runbooks</a></span>
+        <span class="pill">API Docs: <a href="/docs">/docs</a></span>
+      </p>
+
+      <div id="incidentNoticeBar" class="notice-bar notice-safe">System status: all safe. No active high-risk incident detected.</div>
+
+      <section class="charts">
+        <div class="chart-card">
+          <h2 class="chart-title">Incident Categories</h2>
+          <p class="chart-subtitle">Click a category bar to open 7-day occurrence frequency.</p>
+          <div id="incidentTypeChart" class="bar-list"></div>
+        </div>
+        <div class="chart-card">
+          <div class="weekly-header">
+            <h3 id="weeklyChartTitle" class="weekly-title">Last 7 Days Frequency</h3>
+            <span id="weeklyHint" class="muted" style="font-size:12px;">Select a category above</span>
+          </div>
+          <div id="weeklyChart" class="bar-list"></div>
+        </div>
+      </section>
+
+      <section class="devices-card">
+        <h2 class="chart-title" style="margin-bottom:6px;">External Devices Attached</h2>
+        <p class="chart-subtitle">Connected or recently active device signals (OneDrive / USB / pen drive).</p>
+        <div id="externalDevicesStatus" class="muted">Loading device status...</div>
+        <ul id="externalDevicesList" class="device-list hidden"></ul>
+      </section>
+
+      <section class="telemetry-card">
+        <h2 class="chart-title" style="margin-bottom:6px;">Telemetry Blind-Spot Detector (SOC Health Monitor)</h2>
+        <p class="chart-subtitle">Finds hosts without EDR, high-risk users missing IAM telemetry, heartbeat drops, and host-source health heatmap.</p>
+        <div id="telemetryStats" class="telemetry-stats"></div>
+        <div class="row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+          <div>
+            <h3 class="weekly-title">Hosts Missing EDR</h3>
+            <ul id="hostsWithoutEdrList" class="list-compact"></ul>
+          </div>
+          <div>
+            <h3 class="weekly-title">High-Risk Users Missing IAM Logs</h3>
+            <ul id="usersMissingIamList" class="list-compact"></ul>
+          </div>
+          <div>
+            <h3 class="weekly-title">Heartbeat Drops</h3>
+            <ul id="heartbeatDropsList" class="list-compact"></ul>
+          </div>
+        </div>
+        <div id="telemetryHeatmapWrap"></div>
+      </section>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Incident</th>
+            <th>Type</th>
+            <th>Scores</th>
+            <th>Entities</th>
+            <th>Sources</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for inc in incidents %}
+          <tr>
+            <td>
+              <div><a href="/ui/incidents/{{ inc.id }}">{{ inc.title }}</a></div>
+              <div class="muted" style="font-size:12px;">{{ inc.id }}</div>
+            </td>
+            <td><span class="pill">{{ inc.incident_type }}</span></td>
+            <td class="score">
+              fidelity={{ "%.1f"|format(inc.fidelity_score) }}<br/>
+              conf={{ "%.2f"|format(inc.confidence_score) }}<br/>
+              cov={{ "%.2f"|format(inc.coverage_score) }}<br/>
+              events={{ inc.event_count }}
+            </td>
+            <td class="muted" style="font-size:12px;">
+              hosts: {{ inc.entities.hosts|join(", ") }}<br/>
+              users: {{ inc.entities.users|join(", ") }}<br/>
+              ips: {{ inc.entities.ips|join(", ") }}
+            </td>
+            <td class="muted" style="font-size:12px;">{{ inc.sources|join(", ") }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <script>
+      const threatKeywords = ["virus", "malware", "trojan", "ransom", "worm", "suspicious", "c2", "command_and_control"];
+
+      function isThreatType(typeName) {
+        const v = String(typeName || "").toLowerCase();
+        return threatKeywords.some((k) => v.includes(k));
+      }
+
+      function setIncidentNotice(isWarning) {
+        const bar = document.getElementById("incidentNoticeBar");
+        if (!bar) return;
+        if (isWarning) {
+          bar.className = "notice-bar notice-alert";
+          bar.textContent = "WARNING !! A VIRUS HAS ENTERED IN YOUR SYSTEM.";
+        } else {
+          bar.className = "notice-bar notice-safe";
+          bar.textContent = "System status: all safe. No active high-risk incident detected.";
+        }
+      }
+
+      function buildBars(container, labels, values, options) {
+        container.innerHTML = "";
+        const max = Math.max(...values, 1);
+
+        labels.forEach((label, index) => {
+          const value = values[index] || 0;
+          const width = (value / max) * 100;
+
+          const row = document.createElement("div");
+          row.className = "bar-row";
+
+          const labelEl = document.createElement("div");
+          labelEl.className = "bar-label";
+          labelEl.textContent = label;
+
+          const track = document.createElement("div");
+          track.className = "bar-track";
+
+          const fill = document.createElement("div");
+          fill.className = "bar-fill";
+          fill.style.width = width + "%";
+
+          if (options && typeof options.onClick === "function") {
+            fill.title = "Show 7-day frequency";
+            fill.addEventListener("click", () => options.onClick(label));
+          } else {
+            fill.style.cursor = "default";
+          }
+
+          const valueEl = document.createElement("div");
+          valueEl.className = "bar-value";
+          valueEl.textContent = String(value);
+
+          track.appendChild(fill);
+          row.appendChild(labelEl);
+          row.appendChild(track);
+          row.appendChild(valueEl);
+          container.appendChild(row);
+        });
+      }
+
+      async function loadIncidentCharts() {
+        const typeContainer = document.getElementById("incidentTypeChart");
+        const weeklyContainer = document.getElementById("weeklyChart");
+        const weeklyTitle = document.getElementById("weeklyChartTitle");
+        const weeklyHint = document.getElementById("weeklyHint");
+
+        try {
+          const response = await fetch("/charts/incidents/by-type");
+          const data = await response.json();
+
+          if (!data.labels || data.labels.length === 0) {
+            typeContainer.innerHTML = "<div class='empty'>No incidents available.</div>";
+            weeklyContainer.innerHTML = "<div class='empty'>No weekly data available.</div>";
+            setIncidentNotice(false);
+            return;
+          }
+
+          function renderWeekly(typeName) {
+            const breakdown = data.weekly_breakdown[typeName];
+            if (!breakdown) {
+              weeklyContainer.innerHTML = "<div class='empty'>No 7-day data for this category.</div>";
+              return;
+            }
+            weeklyTitle.textContent = "Last 7 Days: " + typeName;
+            weeklyHint.textContent = "Daily occurrence frequency";
+            buildBars(weeklyContainer, breakdown.dates, breakdown.counts);
+          }
+
+          buildBars(typeContainer, data.labels, data.counts, { onClick: renderWeekly });
+          renderWeekly(data.labels[0]);
+          setIncidentNotice(data.labels.some(isThreatType));
+        } catch (error) {
+          typeContainer.innerHTML = "<div class='empty'>Failed to load chart data.</div>";
+          weeklyContainer.innerHTML = "<div class='empty'>Failed to load weekly data.</div>";
+          setIncidentNotice(false);
+        }
+      }
+
+      async function loadExternalDevices() {
+        const status = document.getElementById("externalDevicesStatus");
+        const list = document.getElementById("externalDevicesList");
+        try {
+          const response = await fetch("/status/external-devices");
+          const data = await response.json();
+          if (!data.has_devices || !Array.isArray(data.devices) || data.devices.length === 0) {
+            status.textContent = "No external device attached right now.";
+            list.classList.add("hidden");
+            return;
+          }
+
+          status.textContent = "Detected external activity:";
+          list.innerHTML = "";
+          data.devices.forEach((device) => {
+            const item = document.createElement("li");
+            item.textContent = device.name + " | host: " + device.host + " | user: " + device.user + " | " + device.detail;
+            list.appendChild(item);
+          });
+          list.classList.remove("hidden");
+        } catch (error) {
+          status.textContent = "Unable to load external device status.";
+          list.classList.add("hidden");
+        }
+      }
+
+      function renderSimpleList(listEl, values, emptyText) {
+        listEl.innerHTML = "";
+        if (!Array.isArray(values) || values.length === 0) {
+          const item = document.createElement("li");
+          item.textContent = emptyText;
+          listEl.appendChild(item);
+          return;
+        }
+        values.slice(0, 12).forEach((value) => {
+          const item = document.createElement("li");
+          item.textContent = String(value);
+          listEl.appendChild(item);
+        });
+      }
+
+      async function loadTelemetryHealth() {
+        const stats = document.getElementById("telemetryStats");
+        const hostsList = document.getElementById("hostsWithoutEdrList");
+        const usersList = document.getElementById("usersMissingIamList");
+        const dropsList = document.getElementById("heartbeatDropsList");
+        const heatmapWrap = document.getElementById("telemetryHeatmapWrap");
+
+        try {
+          const response = await fetch("/status/telemetry-health");
+          const data = await response.json();
+          const blindSpots = data.blind_spots || {};
+          const hostsMissingEdr = blindSpots.hosts_without_edr || [];
+          const usersMissingIam = blindSpots.users_missing_identity_logs || [];
+          const heartbeatDrops = blindSpots.heartbeat_drops || [];
+
+          stats.innerHTML = "";
+          [
+            { key: "Overall Health", val: (data.overall_health_score_pct ?? 100) + "%" },
+            { key: "Hosts Missing EDR", val: String(hostsMissingEdr.length) },
+            { key: "Users Missing IAM", val: String(usersMissingIam.length) },
+            { key: "Heartbeat Drops", val: String(heartbeatDrops.length) }
+          ].forEach((s) => {
+            const card = document.createElement("div");
+            card.className = "telemetry-stat";
+            card.innerHTML = "<div class='k'>" + s.key + "</div><div class='v'>" + s.val + "</div>";
+            stats.appendChild(card);
+          });
+
+          renderSimpleList(hostsList, hostsMissingEdr, "No blind spot detected.");
+          renderSimpleList(usersList, usersMissingIam, "No blind spot detected.");
+
+          const dropValues = heartbeatDrops.map((d) => {
+            return (d.source || "-") + " @ " + (d.host || "-") + " | last seen: " + (d.last_seen_ts || "-");
+          });
+          renderSimpleList(dropsList, dropValues, "No heartbeat drops detected.");
+
+          const expected = Array.isArray(data.expected_sources) ? data.expected_sources : [];
+          const rows = Array.isArray(data.heatmap) ? data.heatmap : [];
+          if (rows.length === 0 || expected.length === 0) {
+            heatmapWrap.innerHTML = "<div class='empty'>No telemetry heatmap data available.</div>";
+            return;
+          }
+
+          const headerCells = expected.map((s) => "<th>" + s.toUpperCase() + "</th>").join("");
+          const bodyRows = rows.map((r) => {
+            const src = r.sources || {};
+            const sourceCells = expected.map((s) => {
+              const state = ((src[s] || {}).state || "missing").toLowerCase();
+              const cls = state === "healthy" ? "hm-healthy" : (state === "degraded" ? "hm-degraded" : "hm-missing");
+              return "<td><span class='heatmap-cell " + cls + "'>" + state + "</span></td>";
+            }).join("");
+            return "<tr><td><b>" + r.host + "</b></td>" + sourceCells + "<td>" + String(r.health_score_pct || 0) + "%</td></tr>";
+          }).join("");
+
+          heatmapWrap.innerHTML =
+            "<table class='heatmap-table'><thead><tr><th>Host</th>" + headerCells + "<th>Score</th></tr></thead><tbody>" + bodyRows + "</tbody></table>";
+        } catch (error) {
+          stats.innerHTML = "<div class='empty'>Unable to load telemetry health.</div>";
+          hostsList.innerHTML = "<li>Unable to load.</li>";
+          usersList.innerHTML = "<li>Unable to load.</li>";
+          dropsList.innerHTML = "<li>Unable to load.</li>";
+          heatmapWrap.innerHTML = "";
+        }
+      }
+
+      function showSecuritySystem() {
+        document.body.classList.remove("login-mode");
+        document.getElementById("loginView").classList.add("hidden");
+        document.getElementById("securitySystem").classList.remove("hidden");
+        loadIncidentCharts();
+        loadExternalDevices();
+        loadTelemetryHealth();
+      }
+
+      function setupLogin() {
+        const loginForm = document.getElementById("loginForm");
+        const saved = sessionStorage.getItem("demo_security_logged_in");
+        if (saved === "1") {
+          showSecuritySystem();
+          return;
+        }
+
+        loginForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+          sessionStorage.setItem("demo_security_logged_in", "1");
+          showSecuritySystem();
+        });
+      }
+
+      setupLogin();
+    </script>
+  </body>
+</html>
+

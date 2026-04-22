@@ -1,0 +1,36 @@
+id: rb_suspicious_activity_v1
+name: Generic Suspicious Activity (Triage Runbook)
+version: "1.0"
+incident_types:
+  - suspicious_activity
+
+defaults:
+  owner_role: "SOC Analyst"
+  severity_guidance: "Adjust based on corroboration and impacted assets."
+
+steps:
+  - id: triage
+    title: "Triage and validate"
+    objective: "Determine if this is a true security incident."
+    procedure: |
+      Review timeline for user(s) {{ users_fmt }}, host(s) {{ hosts_fmt }}, IPs {{ ips_fmt }}.
+      Check cross-source corroboration and any rule hits.
+    validation: "Mark as Hypothesis vs Confirmed based on evidence strength and telemetry coverage."
+    evidence:
+      event_types: []
+      limit: 50
+
+  - id: contain_if_needed
+    title: "Contain (if validated)"
+    objective: "Reduce risk while minimizing disruption."
+    procedure: |
+      If validated, apply least-disruptive containment: isolate host(s), disable accounts, block IOCs.
+      If telemetry is missing, prioritize restoring visibility before major actions.
+
+  - id: document
+    title: "Document and close"
+    objective: "Ensure auditability and tuning."
+    procedure: |
+      Record evidence IDs, key entities, and outcome.
+      Add tuning notes to reduce false positives.
+
